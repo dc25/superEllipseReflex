@@ -6,6 +6,17 @@ import Data.Maybe
 import Data.Map
 import Text.Read
 
+data Ellipse = Ellipse { a :: Float
+                       , b :: Float
+                       , n :: Float
+                       }
+
+toMaybeEllipse :: Maybe Float -> Maybe Float -> Maybe Float -> Maybe Ellipse
+toMaybeEllipse Nothing _ _ = Nothing
+toMaybeEllipse _ Nothing _ = Nothing
+toMaybeEllipse _ _ Nothing = Nothing
+toMaybeEllipse (Just a) (Just b) (Just n) = Just $ Ellipse a b n
+
 svgns :: Maybe Text
 svgns = (Just "http://www.w3.org/2000/svg")
 
@@ -13,37 +24,45 @@ showError :: Maybe a -> String
 showError Nothing = "invalid input"
 showError _ = ""
 
-toIntMap :: Maybe Int -> Map Int Int
-toIntMap  = 
+toMap :: Maybe Ellipse -> Map Int Ellipse
+toMap  = 
     fromList
-    .fmap (\i -> ((,) 0 (fromMaybe 0 i))) -- Change "Just Int" to "Int"
-    .Prelude.filter isJust -- Get rid of Nothing ( an invalid Int)
-    .(:[]) -- Put the Maybe Int into a (one item) list 
+    .fmap (\e -> ((,) 0 (fromMaybe (Ellipse 0.0 0.0 0.0) e))) 
+    .Prelude.filter isJust -- Get rid of Nothing 
+    .(:[]) -- Put the Maybe into a (one item) list 
 
-toMaybeInt  = 
-    (readMaybe::(String -> Maybe Int))  -- String to Maybe Int
+toMaybeFloat :: Text -> Maybe Float
+toMaybeFloat  = 
+    (readMaybe::(String -> Maybe Float))  -- String to Maybe Int
     .unpack  -- Text to String
 
-circleAttrs :: Int -> Map Text Text
-circleAttrs r =
+circleAttrs :: Ellipse -> Map Text Text
+circleAttrs (Ellipse a b n) =
     fromList [ ( "cx",    "0")
              , ( "cy",    "0")
-             , ( "r",     pack $ show r)
+             , ( "r",     pack $ show a)
              , ( "style", "fill:green")
              ] 
 
-showCircle :: MonadWidget t m => Int -> Dynamic t Int -> m ()
-showCircle _ dInt = do
+showCircle :: MonadWidget t m => Int -> Dynamic t Ellipse -> m ()
+showCircle _ dEllipse = do
     elStopPropagationNS svgns "g" Mousemove $ 
-        elDynAttrNS' svgns "circle" (circleAttrs <$> dInt) $ return ()
+        elDynAttrNS' svgns "circle" (circleAttrs <$> dEllipse) $ return ()
     return ()
 
 view :: MonadWidget t m => m ()
 view = do 
-    ti <- el "div" $ textInput def
-    let dString = value ti
-        dMaybeInt = fmap toMaybeInt dString
-        dIntMap = fmap toIntMap dMaybeInt
+    inputA <- el "div" $ textInput def
+    inputB <- el "div" $ textInput def
+    inputN <- el "div" $ textInput def
+    let dMaybeA = fmap toMaybeFloat $ value inputA
+        dMaybeB = fmap toMaybeFloat $ value inputB
+        dMaybeN = fmap toMaybeFloat $ value inputN
+
+        dMaybeAB = zipDynWith toMaybeEllipse dMaybeA dMaybeB 
+        dMaybeABN = zipDynWith ($) dMaybeAB dMaybeN 
+
+        dMap = fmap toMap dMaybeABN
         
         dAttrs = constDyn $ 
                         fromList [ ("width" , "600")
@@ -51,8 +70,8 @@ view = do
                                  , ("style" , "border:solid; margin:8em")
                                  ]
 
-    dynText $ fmap (pack.showError) dMaybeInt
-    elDynAttrNS' svgns "svg" dAttrs $ listWithKey dIntMap showCircle
+    dynText $ fmap (pack.showError) dMaybeABN
+    elDynAttrNS' svgns "svg" dAttrs $ listWithKey dMap showCircle
 
     return ()
 
