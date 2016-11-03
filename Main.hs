@@ -11,11 +11,20 @@ data Ellipse = Ellipse { a :: Float
                        , n :: Float
                        }
 
+toMaybeFloat :: Text -> Maybe Float
+toMaybeFloat  = 
+    (readMaybe::(String -> Maybe Float))  -- String to Maybe Int
+    .unpack  -- Text to String
+
 toMaybeEllipse :: Maybe Float -> Maybe Float -> Maybe Float -> Maybe Ellipse
 toMaybeEllipse Nothing _ _ = Nothing
 toMaybeEllipse _ Nothing _ = Nothing
 toMaybeEllipse _ _ Nothing = Nothing
 toMaybeEllipse (Just a) (Just b) (Just n) = Just $ Ellipse a b n
+
+toEllipse :: Text -> Text -> Text -> Maybe Ellipse
+toEllipse tA tB tN =
+    toMaybeEllipse (toMaybeFloat tA) (toMaybeFloat tB) (toMaybeFloat tN)
 
 svgns :: Maybe Text
 svgns = (Just "http://www.w3.org/2000/svg")
@@ -30,11 +39,6 @@ toMap  =
     .fmap (\e -> ((,) 0 (fromMaybe (Ellipse 0.0 0.0 0.0) e))) 
     .Prelude.filter isJust -- Get rid of Nothing 
     .(:[]) -- Put the Maybe into a (one item) list 
-
-toMaybeFloat :: Text -> Maybe Float
-toMaybeFloat  = 
-    (readMaybe::(String -> Maybe Float))  -- String to Maybe Int
-    .unpack  -- Text to String
 
 circleAttrs :: Ellipse -> Map Text Text
 circleAttrs (Ellipse a b n) =
@@ -55,12 +59,8 @@ view = do
     inputA <- el "div" $ textInput def
     inputB <- el "div" $ textInput def
     inputN <- el "div" $ textInput def
-    let dMaybeA = fmap toMaybeFloat $ value inputA
-        dMaybeB = fmap toMaybeFloat $ value inputB
-        dMaybeN = fmap toMaybeFloat $ value inputN
-
-        dMaybeAB = zipDynWith toMaybeEllipse dMaybeA dMaybeB 
-        dMaybeABN = zipDynWith ($) dMaybeAB dMaybeN 
+    let dMaybeAB = zipDynWith toEllipse (value inputA) (value inputB) 
+        dMaybeABN = zipDynWith ($) dMaybeAB (value inputN)
 
         dMap = fmap toMap dMaybeABN
         
