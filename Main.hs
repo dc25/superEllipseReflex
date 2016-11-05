@@ -75,15 +75,15 @@ showLine _ dSegment = do
 
 main = mainWidget $ do
     ta <- el "div" $ do
-        text "a:"
+        text "a: "
         textInput def { _textInputConfig_initialValue = "200"}
 
     tb <- el "div" $ do
-        text "b:"
+        text "b: "
         textInput def { _textInputConfig_initialValue = "200"}
 
     tn <- el "div" $ do
-        text "n:"
+        text "n: "
         textInput def { _textInputConfig_initialValue = "2.5"}
     let 
         ab = zipDynWith toEllipse (fmap toFloat $ value ta) (fmap toFloat $ value tb)
