@@ -94,7 +94,6 @@ main = mainWidget $ do
                      [ ("width" , pack $ show width)
                      , ("height", pack $ show height)
                      ]
-        alertStyle = "style" =: "color:red" 
-    elAttr "div" alertStyle $ dynText $ fmap (pack.showError) dEllipse
-    elDynAttrNS' svgns "svg" dAttrs $ listWithKey dLines showLine
+    elAttr "div" ("style" =: "color:red") $ dynText $ fmap (pack.showError) dEllipse
+    el "div" $ elDynAttrNS' svgns "svg" dAttrs $ listWithKey dLines showLine
     return ()
