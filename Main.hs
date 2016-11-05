@@ -69,8 +69,7 @@ showCircle _ dSegment = do
     elDynAttrNS' svgns "line" (lineAttrs <$> dSegment) $ return ()
     return ()
 
-view :: MonadWidget t m => m ()
-view = do 
+main = mainWidget $ do
     ta <- el "div" $ textInput def { _textInputConfig_initialValue = "200" }
     tb <- el "div" $ textInput def { _textInputConfig_initialValue = "200" }
     tn <- el "div" $ textInput def { _textInputConfig_initialValue = "2.5" }
@@ -87,5 +86,3 @@ view = do
     el "div" $ dynText $ fmap (pack.showError) ellipse
     elDynAttrNS' svgns "svg" dAttrs $ listWithKey dMap showCircle
     return ()
-
-main = mainWidget view
