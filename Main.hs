@@ -18,7 +18,7 @@ toFloat  = readMaybe.unpack
 
 toEllipse :: Maybe Float -> Maybe Float -> Maybe Float -> Maybe Ellipse
 toEllipse (Just a) (Just b) (Just n) = 
-    if a < 1.0 || b <= 1.0 || n <= 0.0 
+    if a < 1.0 || b <= 1.0 || n <= 0.0  -- not all floats are valid
     then Nothing 
     else Just $ Ellipse a b n
 
@@ -47,14 +47,14 @@ getOctant (Just (Ellipse a b n)) =
             then (\p -> zip p (map f p)) ip
             else (\p -> zip (map f p) p) dp
 
-    in fromList $  -- change list to map (for listWithKey)
-       zip [0..] $ -- annotate segments with index
-       segments $  -- change points to line segments
+    in fromList $  -- changes list to map (for listWithKey)
+       zip [0..] $ -- annotates segments with index
+       segments $  -- changes points to line segments
        scale a b $ 
        rotate180 $ -- doubles the point count
        rotate90 $  -- doubles the point count
        reflect45 $ -- doubles the point count
-       takeWhile (\(x,y) -> x < y ) $ -- until crossing 45 degrees
+       takeWhile (\(x,y) -> x < y ) $ -- stop at 45 degree line
        points 0.9
 
 getOctant Nothing = empty
@@ -87,14 +87,14 @@ main = mainWidget $ do
         textInput def { _textInputConfig_initialValue = "2.5"}
     let 
         ab = zipDynWith toEllipse (fmap toFloat $ value ta) (fmap toFloat $ value tb)
-        ellipse = zipDynWith ($) ab (fmap toFloat $ value tn)
-        dMap = fmap getOctant ellipse 
+        dEllipse = zipDynWith ($) ab (fmap toFloat $ value tn)
+        dLines = fmap getOctant dEllipse -- a collection of lines
         
         dAttrs = constDyn $ fromList 
                      [ ("width" , pack $ show width)
                      , ("height", pack $ show height)
                      ]
         alertStyle = "style" =: "color:red" 
-    elAttr "div" alertStyle $ dynText $ fmap (pack.showError) ellipse
-    elDynAttrNS' svgns "svg" dAttrs $ listWithKey dMap showLine
+    elAttr "div" alertStyle $ dynText $ fmap (pack.showError) dEllipse
+    elDynAttrNS' svgns "svg" dAttrs $ listWithKey dLines showLine
     return ()
