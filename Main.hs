@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 import Reflex
 import Reflex.Dom
-import Data.Text (Text, pack,unpack) 
+import Data.Text (Text, pack, unpack) 
 import Data.Map (Map, fromList, empty)
 import Text.Read (readMaybe)
 
@@ -17,7 +17,11 @@ toFloat :: Text -> Maybe Float
 toFloat  = readMaybe.unpack  
 
 toEllipse :: Maybe Float -> Maybe Float -> Maybe Float -> Maybe Ellipse
-toEllipse (Just a) (Just b) (Just n) = Just $ Ellipse a b n
+toEllipse (Just a) (Just b) (Just n) = 
+    if a < 10.0 || b <= 10.0 || n <= 0.0 
+    then Nothing 
+    else Just $ Ellipse a b n
+
 toEllipse _ _ _ = Nothing
 
 svgns :: Maybe Text
@@ -26,15 +30,6 @@ svgns = Just "http://www.w3.org/2000/svg"
 showError :: Maybe a -> String
 showError Nothing = "invalid input"
 showError _ = ""
-
-lineAttrs :: Segment -> Map Text Text
-lineAttrs ((x1,y1), (x2,y2)) =
-    fromList [ ( "x1",    pack $ show (width/2+x1))
-             , ( "y1",    pack $ show (height/2+y1))
-             , ( "x2",    pack $ show (width/2+x2))
-             , ( "y2",    pack $ show (height/2+y2))
-             , ( "style", "stroke:red;stroke-width:2")
-             ]    
 
 reflect45 pts  =  pts ++ fmap (\(x,y) -> ( y,  x)) (reverse pts)
 rotate90  pts  =  pts ++ fmap (\(x,y) -> ( y, -x)) pts
@@ -64,15 +59,32 @@ getOctant (Just (Ellipse a b n)) =
 
 getOctant Nothing = empty
 
-showCircle :: MonadWidget t m => Int -> Dynamic t Segment -> m ()
-showCircle _ dSegment = do
+lineAttrs :: Segment -> Map Text Text
+lineAttrs ((x1,y1), (x2,y2)) =
+    fromList [ ( "x1",    pack $ show (width/2+x1))
+             , ( "y1",    pack $ show (height/2+y1))
+             , ( "x2",    pack $ show (width/2+x2))
+             , ( "y2",    pack $ show (height/2+y2))
+             , ( "style", "stroke:red;stroke-width:2")
+             ]    
+         
+showLine :: MonadWidget t m => Int -> Dynamic t Segment -> m ()
+showLine _ dSegment = do
     elDynAttrNS' svgns "line" (lineAttrs <$> dSegment) $ return ()
     return ()
 
 main = mainWidget $ do
-    ta <- el "div" $ textInput def { _textInputConfig_initialValue = "200" }
-    tb <- el "div" $ textInput def { _textInputConfig_initialValue = "200" }
-    tn <- el "div" $ textInput def { _textInputConfig_initialValue = "2.5" }
+    ta <- el "div" $ do
+        text "a:"
+        textInput def { _textInputConfig_initialValue = "200"}
+
+    tb <- el "div" $ do
+        text "b:"
+        textInput def { _textInputConfig_initialValue = "200"}
+
+    tn <- el "div" $ do
+        text "n:"
+        textInput def { _textInputConfig_initialValue = "2.5"}
     let 
         ab = zipDynWith toEllipse (fmap toFloat $ value ta) (fmap toFloat $ value tb)
         ellipse = zipDynWith ($) ab (fmap toFloat $ value tn)
@@ -84,5 +96,5 @@ main = mainWidget $ do
                      ]
 
     el "div" $ dynText $ fmap (pack.showError) ellipse
-    elDynAttrNS' svgns "svg" dAttrs $ listWithKey dMap showCircle
+    elDynAttrNS' svgns "svg" dAttrs $ listWithKey dMap showLine
     return ()
