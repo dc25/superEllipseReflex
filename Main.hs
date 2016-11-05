@@ -34,16 +34,16 @@ showError _ = ""
 reflect45 pts  =  pts ++ fmap (\(x,y) -> ( y,  x)) (reverse pts)
 rotate90  pts  =  pts ++ fmap (\(x,y) -> ( y, -x)) pts
 rotate180 pts  =  pts ++ fmap (\(x,y) -> (-x, -y)) pts
-scale a b pts  =  fmap (\(x,y) -> ( a*x, b*y )) pts
+scale a b      =  fmap (\(x,y) -> ( a*x, b*y )) 
 segments  pts  =  zip pts $ tail pts
 
 getOctant :: Maybe Ellipse -> Map Int ((Float,Float),(Float,Float))
 getOctant (Just (Ellipse a b n)) =
     let f p = (1 - p**n)**(1/n)
-        dp = iterate (\v -> v*0.9) 1.0
+        dp = iterate (*0.9) 1.0
         ip = map (\p -> 1.0 -p) dp
         points s = 
-            if (n > 1.0) 
+            if n > 1.0
             then (\p -> zip p (map f p)) ip
             else (\p -> zip (map f p) p) dp
 
@@ -65,7 +65,7 @@ lineAttrs ((x1,y1), (x2,y2)) =
              , ( "y1",    pack $ show (height/2+y1))
              , ( "x2",    pack $ show (width/2+x2))
              , ( "y2",    pack $ show (height/2+y2))
-             , ( "style", "stroke:red;stroke-width:2")
+             , ( "style", "stroke:brown;stroke-width:2")
              ]    
          
 showLine :: MonadWidget t m => Int -> Dynamic t Segment -> m ()
@@ -74,6 +74,7 @@ showLine _ dSegment = do
     return ()
 
 main = mainWidget $ do
+    elAttr "h1" ("style" =: "color:brown") $ text "Superellipse" 
     ta <- el "div" $ do
         text "a: "
         textInput def { _textInputConfig_initialValue = "200"}
@@ -86,8 +87,8 @@ main = mainWidget $ do
         text "n: "
         textInput def { _textInputConfig_initialValue = "2.5"}
     let 
-        ab = zipDynWith toEllipse (fmap toFloat $ value ta) (fmap toFloat $ value tb)
-        dEllipse = zipDynWith ($) ab (fmap toFloat $ value tn)
+        ab = zipDynWith toEllipse (toFloat <$> value ta) (toFloat <$> value tb)
+        dEllipse = zipDynWith ($) ab (toFloat <$> value tn)
         dLines = fmap getOctant dEllipse -- a collection of lines
         
         dAttrs = constDyn $ fromList 
