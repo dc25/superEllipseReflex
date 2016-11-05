@@ -18,7 +18,7 @@ toFloat  = readMaybe.unpack
 
 toEllipse :: Maybe Float -> Maybe Float -> Maybe Float -> Maybe Ellipse
 toEllipse (Just a) (Just b) (Just n) = 
-    if a < 10.0 || b <= 10.0 || n <= 0.0 
+    if a < 1.0 || b <= 1.0 || n <= 0.0 
     then Nothing 
     else Just $ Ellipse a b n
 
