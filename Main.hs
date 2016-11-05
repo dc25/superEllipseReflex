@@ -2,9 +2,8 @@
 import Reflex
 import Reflex.Dom
 import Data.Text (Text, pack,unpack) 
-import Data.Maybe
 import Data.Map (Map, fromList, empty)
-import Text.Read
+import Text.Read (readMaybe)
 
 width = 600
 height = 400
@@ -45,9 +44,7 @@ segments  pts  =  zip pts $ tail pts
 
 getOctant :: Maybe Ellipse -> Map Int ((Float,Float),(Float,Float))
 getOctant (Just (Ellipse a b n)) =
-    let 
-        f p = (1 - p**n)**(1/n)
-
+    let f p = (1 - p**n)**(1/n)
         points s = 
             if (n > 1.0) 
             then (\p -> zip p (map f p)) $ iterate (\v -> v+s) 0.0  
@@ -78,12 +75,11 @@ view = do
     let 
         ab = zipDynWith toEllipse (fmap toFloat $ value ta) (fmap toFloat $ value tb)
         ellipse = zipDynWith ($) ab (fmap toFloat $ value tn)
-        dMap = fmap getOctant ellipse
+        dMap = fmap getOctant ellipse 
         
         dAttrs = constDyn $ fromList 
                      [ ("width" , pack $ show width)
                      , ("height", pack $ show height)
-                     , ("style" , "border:solid; margin:8em")
                      ]
 
     dynText $ fmap (pack.showError) ellipse
