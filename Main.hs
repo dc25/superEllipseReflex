@@ -24,9 +24,6 @@ toEllipse (Just a) (Just b) (Just n) =
 
 toEllipse _ _ _ = Nothing
 
-svgns :: Maybe Text
-svgns = Just "http://www.w3.org/2000/svg"
-
 showError :: Maybe a -> String
 showError Nothing = "invalid input"
 showError _ = ""
@@ -37,8 +34,8 @@ rotate180 pts  =  pts ++ fmap (\(x,y) -> (-x, -y)) pts
 scale a b      =  fmap (\(x,y) -> ( a*x, b*y )) 
 segments  pts  =  zip pts $ tail pts
 
-getOctant :: Maybe Ellipse -> Map Int ((Float,Float),(Float,Float))
-getOctant (Just (Ellipse a b n)) =
+toLineMap :: Maybe Ellipse -> Map Int ((Float,Float),(Float,Float))
+toLineMap (Just (Ellipse a b n)) =
     let f p = (1 - p**n)**(1/n)
         dp = iterate (*0.9) 1.0
         ip = map (\p -> 1.0 -p) dp
@@ -57,7 +54,7 @@ getOctant (Just (Ellipse a b n)) =
        takeWhile (\(x,y) -> x < y ) $ -- stop at 45 degree line
        points 0.9
 
-getOctant Nothing = empty
+toLineMap Nothing = empty
 
 lineAttrs :: Segment -> Map Text Text
 lineAttrs ((x1,y1), (x2,y2)) =
@@ -89,7 +86,7 @@ main = mainWidget $ do
     let 
         ab = zipDynWith toEllipse (toFloat <$> value ta) (toFloat <$> value tb)
         dEllipse = zipDynWith ($) ab (toFloat <$> value tn)
-        dLines = fmap getOctant dEllipse -- a collection of lines
+        dLines = fmap toLineMap dEllipse 
         
         dAttrs = constDyn $ fromList 
                      [ ("width" , pack $ show width)
@@ -99,6 +96,6 @@ main = mainWidget $ do
     el "div" $ elSvgns "svg" dAttrs $ listWithKey dLines showLine
     return ()
 
--- At end to cover up Rosetta Code unmatched quotes problem.
+-- At end to avoid Rosetta Code unmatched quotes problem.
 elSvgns :: forall t m a. MonadWidget t m => Text -> Dynamic t (Map Text Text) -> m a -> m (El t, a)
-elSvgns = elDynAttrNS' svgns 
+elSvgns = elDynAttrNS' (Just "http://www.w3.org/2000/svg")

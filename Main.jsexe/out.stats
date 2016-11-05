@@ -10,12 +10,12 @@ ghcjs-base-0.2.0.0-LVG5gWl9dFjHHRfyhRxvZP:6817
 ghcjs-dom-0.2.3.1-6qX2PLzkmzh2kwPJafhipW:135369
 ghcjs-prim-0.1.0.0-IFhsWclGfLr1HfhUvIVylA:10712
 integer-gmp:             72610
-main:                    48613
+main:                    48700
 ref-tf-0.4.0.1-3hM7hnw7bOB1FwMAOCGwpN:2151
 reflex-0.5.0-Ltuaubz1bCa8R8AxMsLzlx:862469
 reflex-dom-0.4-BnDS1gYBEmRCSifNxmgtdQ:671927
 text-1.2.2.1-1XjsQ0Vb7BTChTwQbqjN2E:44352
-these-0.7.1-6x0ReCW2wzq1xZQOYaHO8P:3004
+these-0.7.1-6x0ReCW2wzq1xZQOYaHO8P:3003
 transformers-0.5.2.0-Lvs3wlJMkpyLRFNHJ8pmeB:15658
 
 
@@ -150,7 +150,7 @@ integer-gmp
     GHC.Integer.Type:                   72610
 
 main
-    Main:                               48613
+    Main:                               48700
 
 ref-tf-0.4.0.1-3hM7hnw7bOB1FwMAOCGwpN
     Control.Monad.Ref:                  2151
@@ -185,7 +185,7 @@ text-1.2.2.1-1XjsQ0Vb7BTChTwQbqjN2E
     Data.Text.Show:                     16113
 
 these-0.7.1-6x0ReCW2wzq1xZQOYaHO8P
-    Data.Align:                         2131
+    Data.Align:                         2130
     Data.These:                         873
 
 transformers-0.5.2.0-Lvs3wlJMkpyLRFNHJ8pmeB
@@ -194,5 +194,5 @@ transformers-0.5.2.0-Lvs3wlJMkpyLRFNHJ8pmeB
 
 
 
-packed metadata: 597587
+packed metadata: 597516
 
