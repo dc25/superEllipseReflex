@@ -6,28 +6,20 @@ import Data.Maybe
 import Data.Map (Map, fromList, empty)
 import Text.Read
 
+width = 600
+height = 400
+
 type Point = (Float,Float)
 type Segment = (Point,Point)
 
-data Ellipse = Ellipse { a :: Float
-                       , b :: Float
-                       , n :: Float
-                       }
+data Ellipse = Ellipse {a :: Float, b :: Float, n :: Float}
 
-toMaybeFloat :: Text -> Maybe Float
-toMaybeFloat  = 
-    (readMaybe::(String -> Maybe Float))  -- String to Maybe Int
-    .unpack  -- Text to String
+toFloat :: Text -> Maybe Float
+toFloat  = readMaybe.unpack  
 
-toMaybeEllipse :: Maybe Float -> Maybe Float -> Maybe Float -> Maybe Ellipse
-toMaybeEllipse Nothing _ _ = Nothing
-toMaybeEllipse _ Nothing _ = Nothing
-toMaybeEllipse _ _ Nothing = Nothing
-toMaybeEllipse (Just a) (Just b) (Just n) = Just $ Ellipse a b n
-
-toEllipse :: Text -> Text -> Text -> Maybe Ellipse
-toEllipse tA tB tN =
-    toMaybeEllipse (toMaybeFloat tA) (toMaybeFloat tB) (toMaybeFloat tN)
+toEllipse :: Maybe Float -> Maybe Float -> Maybe Float -> Maybe Ellipse
+toEllipse (Just a) (Just b) (Just n) = Just $ Ellipse a b n
+toEllipse _ _ _ = Nothing
 
 svgns :: Maybe Text
 svgns = Just "http://www.w3.org/2000/svg"
@@ -38,37 +30,38 @@ showError _ = ""
 
 lineAttrs :: Segment -> Map Text Text
 lineAttrs ((x1,y1), (x2,y2)) =
-    fromList [ ( "x1",    pack $ show (150+x1))
-             , ( "y1",    pack $ show (150+y1))
-             , ( "x2",    pack $ show (150+x2))
-             , ( "y2",    pack $ show (150+y2))
+    fromList [ ( "x1",    pack $ show (width/2+x1))
+             , ( "y1",    pack $ show (height/2+y1))
+             , ( "x2",    pack $ show (width/2+x2))
+             , ( "y2",    pack $ show (height/2+y2))
              , ( "style", "stroke:red;stroke-width:2")
              ]    
 
-filter2 :: Ord a => (a -> a -> Bool) -> [a] -> [a]
-filter2 f (x0:x1:xs) = 
-    let unfiltered = filter2 f (x1:head xs:tail xs) 
-    in if f x0 x1 
-       then x0 : unfiltered
-       else unfiltered
-
+reflect45 pts  =  pts ++ fmap (\(x,y) -> ( y,  x)) (reverse pts)
+rotate90  pts  =  pts ++ fmap (\(x,y) -> ( y, -x)) pts
+rotate180 pts  =  pts ++ fmap (\(x,y) -> (-x, -y)) pts
+scale a b pts  =  fmap (\(x,y) -> ( a*x, b*y )) pts
+segments  pts  =  zip pts $ tail pts
 
 getOctant :: Maybe Ellipse -> Map Int ((Float,Float),(Float,Float))
 getOctant (Just (Ellipse a b n)) =
     let 
-        stepSize = 0.05
-        params = if n > 1.0 
-                 then iterate (+stepSize) 0.0 
-                 else iterate (\v -> v-stepSize) 1.0
-        getPoint p = (p, (1 - p**n)**(1/n))
-        points = fmap getPoint params
-        segments = zip points $ tail points
-        eighth = takeWhile (\((x0,y0),(x1,y1)) -> abs (x1-x0) > abs (y1-y0)) segments
-        quarter pts = pts++fmap (\((x0,y0),(x1,y1)) -> ((y0,x0),(y1,x1))) pts
-        half pts = pts ++ fmap (\((x0,y0),(x1,y1)) -> ((-x0,y0),(-x1,y1))) pts
-        whole pts = pts ++ fmap (\((x0,y0),(x1,y1)) -> ((x0,-y0),(x1,-y1))) pts
-        scaled pts = fmap (\((x0,y0),(x1,y1)) -> ((a*x0,b*y0),(a*x1,b*y1))) pts
-    in fromList $ zip [0..] $ scaled $ whole $ half $ quarter $ eighth
+        f p = (1 - p**n)**(1/n)
+
+        points s = 
+            if (n > 1.0) 
+            then (\p -> zip p (map f p)) $ iterate (\v -> v+s) 0.0  
+            else (\p -> zip (map f p) p) $ iterate (\v -> v-s) 1.0
+
+    in fromList $  -- change list to map (for listWithKey)
+       zip [0..] $ -- annotate segments with index
+       segments $  -- change points to line segments
+       scale a b $ 
+       rotate180 $ -- doubles the point count
+       rotate90 $  -- doubles the point count
+       reflect45 $ -- doubles the point count
+       takeWhile (\(x,y) -> x < y ) $ -- until crossing 45 degrees
+       points 0.05
 
 getOctant Nothing = empty
 
@@ -83,17 +76,17 @@ view = do
     tb <- el "div" $ textInput def
     tn <- el "div" $ textInput def
     let 
-        ab = zipDynWith toEllipse (value ta) (value tb)
-        abn = zipDynWith ($) ab (value tn)
-
-        dMap = fmap getOctant abn
+        ab = zipDynWith toEllipse (fmap toFloat $ value ta) (fmap toFloat $ value tb)
+        ellipse = zipDynWith ($) ab (fmap toFloat $ value tn)
+        dMap = fmap getOctant ellipse
         
-        dAttrs = constDyn $ 
-                        fromList [ ("width" , "600")
-                                 , ("height", "400")
-                                 , ("style" , "border:solid; margin:8em")
-                                 ]
-    dynText $ fmap (pack.showError) abn
+        dAttrs = constDyn $ fromList 
+                     [ ("width" , pack $ show width)
+                     , ("height", pack $ show height)
+                     , ("style" , "border:solid; margin:8em")
+                     ]
+
+    dynText $ fmap (pack.showError) ellipse
     elDynAttrNS' svgns "svg" dAttrs $ listWithKey dMap showCircle
     return ()
 
