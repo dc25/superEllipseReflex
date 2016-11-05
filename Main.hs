@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, RankNTypes #-}
 import Reflex
 import Reflex.Dom
 import Data.Text (Text, pack, unpack) 
@@ -70,7 +70,7 @@ lineAttrs ((x1,y1), (x2,y2)) =
          
 showLine :: MonadWidget t m => Int -> Dynamic t Segment -> m ()
 showLine _ dSegment = do
-    elDynAttrNS' svgns "line" (lineAttrs <$> dSegment) $ return ()
+    elSvgns "line" (lineAttrs <$> dSegment) $ return ()
     return ()
 
 main = mainWidget $ do
@@ -96,5 +96,9 @@ main = mainWidget $ do
                      , ("height", pack $ show height)
                      ]
     elAttr "div" ("style" =: "color:red") $ dynText $ fmap (pack.showError) dEllipse
-    el "div" $ elDynAttrNS' svgns "svg" dAttrs $ listWithKey dLines showLine
+    el "div" $ elSvgns "svg" dAttrs $ listWithKey dLines showLine
     return ()
+
+-- At end to cover up Rosetta Code unmatched quotes problem.
+elSvgns :: forall t m a. MonadWidget t m => Text -> Dynamic t (Map Text Text) -> m a -> m (El t, a)
+elSvgns = elDynAttrNS' svgns 
