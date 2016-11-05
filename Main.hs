@@ -45,10 +45,12 @@ segments  pts  =  zip pts $ tail pts
 getOctant :: Maybe Ellipse -> Map Int ((Float,Float),(Float,Float))
 getOctant (Just (Ellipse a b n)) =
     let f p = (1 - p**n)**(1/n)
+        dp = iterate (\v -> v*0.9) 1.0
+        ip = map (\p -> 1.0 -p) dp
         points s = 
             if (n > 1.0) 
-            then (\p -> zip p (map f p)) $ iterate (\v -> v+s) 0.0  
-            else (\p -> zip (map f p) p) $ iterate (\v -> v-s) 1.0
+            then (\p -> zip p (map f p)) ip
+            else (\p -> zip (map f p) p) dp
 
     in fromList $  -- change list to map (for listWithKey)
        zip [0..] $ -- annotate segments with index
@@ -58,7 +60,7 @@ getOctant (Just (Ellipse a b n)) =
        rotate90 $  -- doubles the point count
        reflect45 $ -- doubles the point count
        takeWhile (\(x,y) -> x < y ) $ -- until crossing 45 degrees
-       points 0.05
+       points 0.9
 
 getOctant Nothing = empty
 
@@ -82,7 +84,7 @@ view = do
                      , ("height", pack $ show height)
                      ]
 
-    dynText $ fmap (pack.showError) ellipse
+    el "div" $ dynText $ fmap (pack.showError) ellipse
     elDynAttrNS' svgns "svg" dAttrs $ listWithKey dMap showCircle
     return ()
 
