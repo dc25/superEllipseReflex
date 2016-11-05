@@ -6,7 +6,7 @@ import Data.Map (Map, fromList, empty)
 import Text.Read (readMaybe)
 
 width = 600
-height = 400
+height = 500
 
 type Point = (Float,Float)
 type Segment = (Point,Point)
@@ -69,9 +69,9 @@ showCircle _ dSegment = do
 
 view :: MonadWidget t m => m ()
 view = do 
-    ta <- el "div" $ textInput def
-    tb <- el "div" $ textInput def
-    tn <- el "div" $ textInput def
+    ta <- el "div" $ textInput def { _textInputConfig_initialValue = "200" }
+    tb <- el "div" $ textInput def { _textInputConfig_initialValue = "200" }
+    tn <- el "div" $ textInput def { _textInputConfig_initialValue = "2.5" }
     let 
         ab = zipDynWith toEllipse (fmap toFloat $ value ta) (fmap toFloat $ value tb)
         ellipse = zipDynWith ($) ab (fmap toFloat $ value tn)
